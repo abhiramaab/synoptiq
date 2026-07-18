@@ -1,5 +1,6 @@
 package ai.synoptiq.email.entity;
 
+import ai.synoptiq.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +21,8 @@ public class Email {
 
     private String gmailId;
 
+    private String threadId;
+
     private String sender;
 
     private String subject;
@@ -39,4 +42,8 @@ public class Email {
     private Boolean summarized = false;
 
     private LocalDateTime receivedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

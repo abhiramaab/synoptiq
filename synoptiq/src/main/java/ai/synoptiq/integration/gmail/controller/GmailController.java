@@ -2,6 +2,7 @@ package ai.synoptiq.integration.gmail.controller;
 
 import ai.synoptiq.integration.gmail.dto.GmailMessageDTO;
 import ai.synoptiq.integration.gmail.service.GmailService;
+import ai.synoptiq.user.entity.User;
 import com.google.api.services.gmail.model.ListMessagesResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +30,7 @@ public class GmailController {
             summary = "Fetch Gmail Emails",
             description = "Retrieves emails from the authenticated Gmail account using the Gmail API."
     )
-    public List<GmailMessageDTO> getEmails() throws Exception  {
-        return gmailService.getEmails();
+    public List<GmailMessageDTO> getEmails(User user) throws Exception  {
+        return gmailService.getEmails(user);
     }
 }

@@ -5,6 +5,7 @@ import ai.synoptiq.email.dto.response.EmailListResponse;
 import ai.synoptiq.email.dto.response.EmailResponse;
 import ai.synoptiq.email.dto.response.EmailStatsResponse;
 import ai.synoptiq.email.dto.response.EmailSummaryResponse;
+import ai.synoptiq.user.entity.User;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,8 @@ public interface EmailService {
 
     void syncEmails() throws Exception;
 
+    void syncEmails(User user) throws Exception;
+
     String summarizeEmail(Long id) throws Exception;
 
     Page<EmailListResponse> getAllEmails(int page, int size);
@@ -22,9 +25,14 @@ public interface EmailService {
 
     Page<EmailListResponse> searchEmails(String keyword, int page, int size);
 
-    List<EmailSummaryResponse> summarizeEmailsByDateRange(LocalDateTime start, LocalDateTime end) throws Exception;
+    List<EmailSummaryResponse> summarizeEmailsByDateRange(
+            LocalDateTime start,
+            LocalDateTime end
+    ) throws Exception;
 
-    List<EmailSummaryResponse> summarizeEmails(EmailFilterRequest request) throws Exception;
+    List<EmailSummaryResponse> summarizeEmails(
+            EmailFilterRequest request
+    ) throws Exception;
 
     EmailStatsResponse getEmailStats();
 }

@@ -1,10 +1,9 @@
 package ai.synoptiq.integration.gmail.service.impl;
 
+import ai.synoptiq.integration.gmail.client.GmailClientProvider;
 import ai.synoptiq.integration.gmail.dto.GmailMessageDTO;
 import ai.synoptiq.integration.gmail.service.GmailService;
-import ai.synoptiq.integration.gmail.util.GoogleAuthorizationUtil;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
+import ai.synoptiq.user.entity.User;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
@@ -24,17 +23,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GmailServiceImpl implements GmailService {
 
-    private static final String APPLICATION_NAME = "Synoptiq AI";
+    private final GmailClientProvider gmailClientProvider;
 
     @Override
-    public List<GmailMessageDTO> getEmails() throws Exception {
+    public List<GmailMessageDTO> getEmails(User user) throws Exception {
 
-        Gmail gmail = new Gmail.Builder(
-                GoogleNetHttpTransport.newTrustedTransport(),
-                GsonFactory.getDefaultInstance(),
-                GoogleAuthorizationUtil.authorize())
-                .setApplicationName(APPLICATION_NAME)
-                .build();
+
+        Gmail gmail = gmailClientProvider.getClient(user);
 
         ListMessagesResponse response = gmail.users()
                 .messages()
@@ -74,6 +69,7 @@ public class GmailServiceImpl implements GmailService {
 
             emails.add(new GmailMessageDTO(
                     fullMessage.getId(),
+                    fullMessage.getThreadId(),
                     from,
                     subject,
                     fullMessage.getSnippet(),
@@ -91,12 +87,12 @@ public class GmailServiceImpl implements GmailService {
             return "";
         }
 
-        // Prefer HTML because many emails have richer HTML content.
         if ("text/html".equalsIgnoreCase(part.getMimeType())) {
 
             MessagePartBody body = part.getBody();
 
             if (body != null && body.getData() != null) {
+
                 String html = decodeBase64(body.getData());
 
                 if (!html.isBlank()) {
@@ -105,12 +101,12 @@ public class GmailServiceImpl implements GmailService {
             }
         }
 
-        // Then use plain text.
         if ("text/plain".equalsIgnoreCase(part.getMimeType())) {
 
             MessagePartBody body = part.getBody();
 
             if (body != null && body.getData() != null) {
+
                 String text = decodeBase64(body.getData());
 
                 if (!text.isBlank()) {
@@ -121,26 +117,14 @@ public class GmailServiceImpl implements GmailService {
 
         if (part.getParts() != null) {
 
-            String plainText = "";
-
             for (MessagePart child : part.getParts()) {
 
                 String result = extractBody(child);
 
-                if (result.isBlank()) {
-                    continue;
-                }
-
-                // Return immediately if it's clearly a real email.
-                if (result.length() > 50) {
+                if (!result.isBlank()) {
                     return result;
                 }
-
-                // Keep short text as fallback.
-                plainText = result;
             }
-
-            return plainText;
         }
 
         return "";
@@ -148,14 +132,11 @@ public class GmailServiceImpl implements GmailService {
 
     private String decodeBase64(String data) {
 
-        if (data == null || data.isBlank()) {
-            return "";
-        }
+        byte[] decodedBytes =
+                Base64.getUrlDecoder().decode(data);
 
-        byte[] decodedBytes = Base64.getUrlDecoder().decode(data);
-
-        String text = new String(decodedBytes, StandardCharsets.UTF_8);
-
-        return Jsoup.parse(text).text().trim();
+        return Jsoup.parse(
+                new String(decodedBytes, StandardCharsets.UTF_8)
+        ).text().trim();
     }
 }

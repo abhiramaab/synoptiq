@@ -20,6 +20,9 @@ public class User {
     private String email;
     private String password;
 
+    private String googleId;
+    private String profilePicture;
+
     @Enumerated(EnumType.STRING)
     private Role role;
     private LocalDateTime createdAt;

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class GmailMessageDTO {
 
     private String id;
+    private String threadId;
     private String from;
     private String subject;
     private String snippet;

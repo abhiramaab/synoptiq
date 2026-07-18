@@ -8,9 +8,14 @@ import ai.synoptiq.email.dto.response.EmailResponse;
 import ai.synoptiq.email.dto.response.EmailStatsResponse;
 import ai.synoptiq.email.dto.response.EmailSummaryResponse;
 import ai.synoptiq.email.entity.Email;
+import ai.synoptiq.email.entity.Notification;
 import ai.synoptiq.email.repository.EmailRepository;
+import ai.synoptiq.email.repository.NotificationRepository;
+import ai.synoptiq.email.repository.WatchRepository;
 import ai.synoptiq.email.service.EmailService;
 import ai.synoptiq.integration.gmail.service.GmailService;
+import ai.synoptiq.user.entity.User;
+import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,20 +35,30 @@ public class EmailServiceImpl implements EmailService {
     private final EmailRepository emailRepository;
     private final GmailService gmailService;
     private final OpenAiService openAiService;
+    private final WatchRepository watchRepository;
+    private final NotificationRepository notificationRepository;
 
     @Override
     public void syncEmails() throws Exception {
 
-        var gmailEmails = gmailService.getEmails();
+        syncEmails(getCurrentUser());
+
+    }
+
+    @Override
+    public void syncEmails(User user) throws Exception {
+
+        var gmailEmails = gmailService.getEmails(user);
 
         for (var gmailEmail : gmailEmails) {
 
-            if (emailRepository.findByGmailId(gmailEmail.getId()).isPresent()) {
+            if (emailRepository.findByGmailIdAndUser(gmailEmail.getId(), user).isPresent()) {
                 continue;
             }
 
             Email email = Email.builder()
                     .gmailId(gmailEmail.getId())
+                    .threadId(gmailEmail.getThreadId())
                     .sender(gmailEmail.getFrom())
                     .subject(gmailEmail.getSubject())
                     .snippet(gmailEmail.getSnippet())
@@ -51,16 +66,31 @@ public class EmailServiceImpl implements EmailService {
                     .summary(null)
                     .summarized(false)
                     .receivedAt(LocalDateTime.now())
+                    .user(user)
                     .build();
 
-            emailRepository.save(email);
+            Email savedEmail = emailRepository.save(email);
+
+            if (watchRepository.existsByThreadIdAndUser(savedEmail.getThreadId(), user)) {
+
+                Notification notification = Notification.builder()
+                        .title("New Reply")
+                        .message("Someone replied to \"" + savedEmail.getSubject() + "\"")
+                        .user(user)
+                        .email(savedEmail)
+                        .createdAt(LocalDateTime.now())
+                        .isRead(false)
+                        .build();
+
+                notificationRepository.save(notification);
+            }
         }
     }
 
     @Override
     public String summarizeEmail(Long id) throws Exception {
 
-        Email email = emailRepository.findById(id)
+        Email email = emailRepository.findByIdAndUser(id, getCurrentUser())
                 .orElseThrow(() -> new NotFoundException("Email not found"));
 
         if (Boolean.TRUE.equals(email.getSummarized())
@@ -82,7 +112,7 @@ Rules:
 - Remove greetings, signatures, unsubscribe links and legal disclaimers.
 - Highlight important amounts, dates, companies and action items.
 - For transaction emails mention merchant, amount and status.
-- For promotional emails summarize the offer only.
+- For promotional emails summarize the offer only in 15 words.
 - For newsletters summarize only the important news.
 - Never say "The email contains..." or "This email is about...".
 - Return plain text only.
@@ -117,10 +147,24 @@ Email:
     @Override
     public EmailResponse getEmailById(Long id) {
 
-        Email email = emailRepository.findById(id)
+        Email email = emailRepository.findByIdAndUser(id, getCurrentUser())
                 .orElseThrow(() -> new NotFoundException("Email not found"));
 
         return mapToResponse(email);
+    }
+
+    private User getCurrentUser() {
+
+        Object principal = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        if (!(principal instanceof User user)) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        return user;
     }
 
     private EmailResponse mapToResponse(Email email) {
@@ -158,10 +202,15 @@ Email:
                 Sort.by(Sort.Direction.DESC, "receivedAt")
         );
 
+        User user = getCurrentUser();
+
         return emailRepository
-                .findBySenderContainingIgnoreCaseOrSubjectContainingIgnoreCaseOrSnippetContainingIgnoreCase(
+                .findByUserAndSenderContainingIgnoreCaseOrUserAndSubjectContainingIgnoreCaseOrUserAndSnippetContainingIgnoreCase(
+                        user,
                         keyword,
+                        user,
                         keyword,
+                        user,
                         keyword,
                         pageable
                 )
@@ -173,7 +222,14 @@ Email:
             LocalDateTime start,
             LocalDateTime end) throws Exception {
 
-        List<Email> emails = emailRepository.findByReceivedAtBetween(start, end);
+        User user = getCurrentUser();
+
+        List<Email> emails =
+                emailRepository.findByUserAndReceivedAtBetween(
+                        user,
+                        start,
+                        end
+                );
 
         List<EmailSummaryResponse> summaries = new ArrayList<>();
 
@@ -240,8 +296,14 @@ Email:
                 throw new IllegalArgumentException("Invalid filter.");
         }
 
-        List<Email> emails = emailRepository.findByReceivedAtBetween(start, end);
+        User user = getCurrentUser();
 
+        List<Email> emails =
+                emailRepository.findByUserAndReceivedAtBetween(
+                        user,
+                        start,
+                        end
+                );
         List<EmailSummaryResponse> summaries = new ArrayList<>();
 
         for (Email email : emails) {
@@ -263,15 +325,22 @@ Email:
     @Override
     public EmailStatsResponse getEmailStats() {
 
-        long total = emailRepository.count();
-
-        long summarized = emailRepository.countBySummarizedTrue();
-
-        long unsummarized = emailRepository.countBySummarizedFalse();
 
         LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
 
-        long today = emailRepository.countByReceivedAtAfter(startOfToday);
+        User user = getCurrentUser();
+
+        long total = emailRepository.countByUser(user);
+
+        long summarized = emailRepository.countByUserAndSummarizedTrue(user);
+
+        long unsummarized = emailRepository.countByUserAndSummarizedFalse(user);
+
+        long today = emailRepository.countByUserAndReceivedAtAfter(
+                user,
+                startOfToday
+        );
+
 
         return new EmailStatsResponse(
                 total,
