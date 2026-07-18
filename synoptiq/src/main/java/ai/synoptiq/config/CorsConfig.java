@@ -1,5 +1,6 @@
 package ai.synoptiq.config;
 
+<<<<<<< HEAD
 @Configuration
 public class CorsConfig {
 
@@ -18,4 +19,7 @@ public class CorsConfig {
             }
         };
     }
+=======
+public class CorsConfig {
+>>>>>>> 046af76 (Update Dockerfile and application properties)
 }
