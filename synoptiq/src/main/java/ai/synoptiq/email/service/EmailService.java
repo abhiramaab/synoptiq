@@ -3,6 +3,7 @@ package ai.synoptiq.email.service;
 import ai.synoptiq.email.dto.request.EmailFilterRequest;
 import ai.synoptiq.email.dto.response.EmailListResponse;
 import ai.synoptiq.email.dto.response.EmailResponse;
+import ai.synoptiq.email.dto.response.EmailStatsResponse;
 import ai.synoptiq.email.dto.response.EmailSummaryResponse;
 import org.springframework.data.domain.Page;
 
@@ -24,4 +25,6 @@ public interface EmailService {
     List<EmailSummaryResponse> summarizeEmailsByDateRange(LocalDateTime start, LocalDateTime end) throws Exception;
 
     List<EmailSummaryResponse> summarizeEmails(EmailFilterRequest request) throws Exception;
+
+    EmailStatsResponse getEmailStats();
 }

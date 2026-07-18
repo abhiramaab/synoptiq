@@ -5,6 +5,7 @@ import ai.synoptiq.common.exception.NotFoundException;
 import ai.synoptiq.email.dto.request.EmailFilterRequest;
 import ai.synoptiq.email.dto.response.EmailListResponse;
 import ai.synoptiq.email.dto.response.EmailResponse;
+import ai.synoptiq.email.dto.response.EmailStatsResponse;
 import ai.synoptiq.email.dto.response.EmailSummaryResponse;
 import ai.synoptiq.email.entity.Email;
 import ai.synoptiq.email.repository.EmailRepository;
@@ -257,5 +258,26 @@ Email:
         }
 
         return summaries;
+    }
+
+    @Override
+    public EmailStatsResponse getEmailStats() {
+
+        long total = emailRepository.count();
+
+        long summarized = emailRepository.countBySummarizedTrue();
+
+        long unsummarized = emailRepository.countBySummarizedFalse();
+
+        LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
+
+        long today = emailRepository.countByReceivedAtAfter(startOfToday);
+
+        return new EmailStatsResponse(
+                total,
+                summarized,
+                unsummarized,
+                today
+        );
     }
 }

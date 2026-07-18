@@ -23,4 +23,10 @@ public interface EmailRepository extends JpaRepository<Email, Long>
             LocalDateTime start,
             LocalDateTime end
     );
+
+    long countBySummarizedTrue();
+
+    long countBySummarizedFalse();
+
+    long countByReceivedAtAfter(LocalDateTime dateTime);
 }

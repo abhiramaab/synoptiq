@@ -1,12 +1,11 @@
 package ai.synoptiq.email.controller;
 
 import ai.synoptiq.email.dto.request.EmailFilterRequest;
-import ai.synoptiq.email.dto.response.EmailListResponse;
-import ai.synoptiq.email.dto.response.EmailResponse;
-import ai.synoptiq.email.dto.response.EmailSummaryResponse;
-import ai.synoptiq.email.dto.response.SummaryResponse;
+import ai.synoptiq.email.dto.response.*;
 import ai.synoptiq.email.service.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -158,6 +157,30 @@ public class EmailController {
         return ResponseEntity.ok(
                 emailService.summarizeEmails(request)
         );
+    }
+
+    @GetMapping("/stats")
+    @Operation(
+            summary = "Get email statistics",
+            description = "Retrieves overall email statistics including total emails, summarized emails, unsummarized emails, and emails received today."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Email statistics retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = EmailStatsResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content
+            )
+    })
+    public ResponseEntity<EmailStatsResponse> getEmailStats() {
+        return ResponseEntity.ok(emailService.getEmailStats());
     }
 
 }
