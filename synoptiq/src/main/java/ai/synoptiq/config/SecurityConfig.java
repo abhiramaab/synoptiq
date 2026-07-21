@@ -99,7 +99,7 @@ public class SecurityConfig {
                                 user.userService(customOAuth2UserService)
                         )
 
-                        .successHandler(oAuth2SuccessHandler)
+                       
                 );
 
         return http.build();
