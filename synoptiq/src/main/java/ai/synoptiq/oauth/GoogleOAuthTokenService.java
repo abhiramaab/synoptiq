@@ -55,8 +55,6 @@ public class GoogleOAuthTokenService {
             System.out.println("Refresh Token FOUND");
         }
 
-        OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
-
         String email = oauthUser.getAttribute("email");
 
         System.out.println("Email: " + email);
