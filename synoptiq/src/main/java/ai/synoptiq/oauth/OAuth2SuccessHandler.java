@@ -26,7 +26,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication)
             throws IOException, ServletException {
 
-    
+        System.out.println("===== SUCCESS HANDLER CALLED =====");
 
         OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
 
@@ -41,7 +41,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String jwt = jwtService.generateToken(email);
 
         response.sendRedirect(
-                "http://localhost:3000/auth/callback?token=" + jwt
+                "http://localhost:8080/swagger-ui/index.html?token=" + jwt
         );
 
     }
