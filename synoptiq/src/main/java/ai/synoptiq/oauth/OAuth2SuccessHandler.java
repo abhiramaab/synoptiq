@@ -38,22 +38,22 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         System.out.println("Email = " + email);
 
-       // googleOAuthTokenService.saveGoogleTokens(authentication);
-
-        System.out.println("Returned from saveGoogleTokens()");
-
-        try {
-            System.out.println("Generating JWT...");
-            String jwt = jwtService.generateToken(email);
-            System.out.println("JWT generated successfully");
-
-            response.sendRedirect(frontendUrl + "/oauth-success?token=" + jwt);
-
+         try {
+            System.out.println("Calling saveGoogleTokens()...");
+            googleOAuthTokenService.saveGoogleTokens(authentication);
+            System.out.println("Google tokens saved successfully.");
         } catch (Exception e) {
+            System.out.println("ERROR while saving Google tokens:");
             e.printStackTrace();
-            throw e;
         }
 
+        System.out.println("Generating JWT...");
+
+        String jwt = jwtService.generateToken(email);
+
+        System.out.println("JWT generated successfully");
+
+        response.sendRedirect(frontendUrl + "/oauth-success?token=" + jwt);
     }
 
 }
