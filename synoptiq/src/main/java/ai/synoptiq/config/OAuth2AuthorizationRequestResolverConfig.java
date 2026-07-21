@@ -55,6 +55,7 @@ public class OAuth2AuthorizationRequestResolverConfig
                 new HashMap<>(request.getAdditionalParameters());
 
         parameters.put("access_type", "offline");
+        parameters.put("prompt", "consent");
 
         return OAuth2AuthorizationRequest
                 .from(request)
