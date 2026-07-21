@@ -116,7 +116,7 @@ public class SecurityConfig {
 
                 "http://localhost:3000",
 
-                "https://synoptiq-frontend-x541.vercel.app"
+                "https://synoptiq.vercel.app"
 
         ));
 
