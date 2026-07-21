@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
@@ -38,22 +39,21 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         System.out.println("Email = " + email);
 
-         try {
-            System.out.println("Calling saveGoogleTokens()...");
-            googleOAuthTokenService.saveGoogleTokens(authentication);
-            System.out.println("Google tokens saved successfully.");
-        } catch (Exception e) {
-            System.out.println("ERROR while saving Google tokens:");
-            e.printStackTrace();
-        }
-
-        System.out.println("Generating JWT...");
-
+        // Generate JWT FIRST
         String jwt = jwtService.generateToken(email);
 
-        System.out.println("JWT generated successfully");
-
+        // Redirect user immediately
         response.sendRedirect(frontendUrl + "/oauth-success?token=" + jwt);
+
+        // Save Google tokens AFTER login
+        CompletableFuture.runAsync(() -> {
+            try {
+                googleOAuthTokenService.saveGoogleTokens(authentication);
+            } catch (Exception e) {
+                System.out.println("Failed to save Google tokens");
+                e.printStackTrace();
+            }
+        });
     }
 
 }

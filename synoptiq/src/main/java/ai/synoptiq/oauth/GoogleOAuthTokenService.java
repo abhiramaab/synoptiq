@@ -26,6 +26,14 @@ public class GoogleOAuthTokenService {
 
         System.out.println("===== saveGoogleTokens() CALLED =====");
 
+        System.out.println("authentication.getName() = " + authentication.getName());
+
+        OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+
+        System.out.println("email = " + oauthUser.getAttribute("email"));
+        System.out.println("sub = " + oauthUser.getAttribute("sub"));
+        System.out.println("name = " + oauthUser.getAttribute("name"));
+
         OAuth2AuthorizedClient client =
                 authorizedClientService.loadAuthorizedClient(
                         "google",
@@ -47,7 +55,6 @@ public class GoogleOAuthTokenService {
             System.out.println("Refresh Token FOUND");
         }
 
-        // Get the email from the OAuth2 principal instead of authentication.getName()
         OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
 
         String email = oauthUser.getAttribute("email");
