@@ -20,8 +20,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class CustomOAuth2UserService
-        implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
+public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
 
@@ -33,7 +32,7 @@ public class CustomOAuth2UserService
         System.out.println("######## CUSTOM OAUTH SERVICE ##########");
         System.out.println("########################################");
 
-        OAuth2User oauthUser = new DefaultOAuth2UserService().loadUser(request);
+        OAuth2User oauthUser = super.loadUser(request);
 
         Map<String, Object> attributes = oauthUser.getAttributes();
 

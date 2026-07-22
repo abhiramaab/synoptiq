@@ -29,22 +29,43 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication)
             throws IOException, ServletException {
 
+        System.out.println();
+        System.out.println("========================================");
         System.out.println("===== SUCCESS HANDLER CALLED =====");
+        System.out.println("========================================");
+
+        // Authentication details
+        System.out.println("Authentication Class : " + authentication.getClass().getName());
+        System.out.println("Principal Class      : " + authentication.getPrincipal().getClass().getName());
+        System.out.println("Authorities          : " + authentication.getAuthorities());
+        System.out.println("Authenticated        : " + authentication.isAuthenticated());
 
         OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+
+        System.out.println("----------------------------------------");
+        System.out.println("OAuth User Class     : " + oauthUser.getClass().getName());
+        System.out.println("Attributes           : " + oauthUser.getAttributes());
+        System.out.println("----------------------------------------");
 
         String email = oauthUser.getAttribute("email");
 
         System.out.println("Email = " + email);
 
         try {
+            System.out.println("Calling GoogleOAuthTokenService...");
             googleOAuthTokenService.saveGoogleTokens(authentication);
+            System.out.println("GoogleOAuthTokenService completed.");
         } catch (Exception e) {
             System.out.println("Failed to save Google tokens");
             e.printStackTrace();
         }
 
         String jwt = jwtService.generateToken(email);
+
+        System.out.println("JWT Generated Successfully");
+        System.out.println("Redirect URL = " + frontendUrl + "/oauth-success?token=<JWT>");
+        System.out.println("========================================");
+        System.out.println();
 
         response.sendRedirect(frontendUrl + "/oauth-success?token=" + jwt);
     }
