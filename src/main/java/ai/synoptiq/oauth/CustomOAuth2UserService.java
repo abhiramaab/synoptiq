@@ -4,6 +4,7 @@ import ai.synoptiq.common.constants.Provider;
 import ai.synoptiq.common.constants.Role;
 import ai.synoptiq.user.entity.User;
 import ai.synoptiq.user.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -23,6 +24,11 @@ import java.util.Map;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+
+@PostConstruct
+public void init() {
+    System.out.println(">>> CustomOAuth2UserService bean created");
+}
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request)
