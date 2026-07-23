@@ -1,6 +1,7 @@
 package ai.synoptiq.config;
 
 import ai.synoptiq.oauth.CustomOAuth2UserService;
+import ai.synoptiq.oauth.CustomOidcUserService;
 import ai.synoptiq.oauth.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -38,6 +39,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomOidcUserService customOidcUserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final ClientRegistrationRepository clientRegistrationRepository;
 
@@ -95,11 +97,15 @@ public class SecurityConfig {
                                 )
                         )
 
-                        .userInfoEndpoint(user ->
-                                user.userService(customOAuth2UserService)
+                        .userInfoEndpoint(user -> user
+                                // Used by providers that DON'T include "openid" in scope
+                                .userService(customOAuth2UserService)
+                                // Google's scope includes "openid" -> this is the one
+                                // that actually gets called during Google login
+                                .oidcUserService(customOidcUserService)
                         )
 
-                       .successHandler(oAuth2SuccessHandler)
+                        .successHandler(oAuth2SuccessHandler)
                 );
 
         return http.build();

@@ -5,35 +5,36 @@ import ai.synoptiq.common.constants.Role;
 import ai.synoptiq.user.entity.User;
 import ai.synoptiq.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * NOTE: Google login uses the "openid" scope, which makes Spring Security
- * run the OIDC flow and call CustomOidcUserService instead of this class.
- * This service only runs for OAuth2 providers configured WITHOUT the
- * "openid" scope (e.g. a plain OAuth2-only provider, not Google).
- * Kept here as a safe fallback so it does the same upsert instead of
- * silently doing nothing (or throwing, as it did before).
+ * Google's OAuth scope includes "openid", so Spring Security runs the
+ * OIDC login flow. In that flow, Spring Security calls an
+ * OidcUserService (configured via .oidcUserService(...)), NOT the plain
+ * OAuth2UserService registered via .userService(...).
+ *
+ * This is the service that actually gets invoked for Google login.
  */
 @Service
 @RequiredArgsConstructor
-public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+public class CustomOidcUserService extends OidcUserService {
 
     private final UserRepository userRepository;
 
     @Override
-    public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
+    public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
 
-        OAuth2User oAuth2User = super.loadUser(request);
+        // Let Spring do the actual call to Google's userinfo/id-token parsing first
+        OidcUser oidcUser = super.loadUser(userRequest);
 
-        String email = oAuth2User.getAttribute("email");
+        String email = oidcUser.getAttribute("email");
 
         if (email == null || email.isBlank()) {
             throw new OAuth2AuthenticationException("Email not returned by OAuth2 provider");
@@ -44,7 +45,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User user = existingUser.orElseGet(User::new);
 
         user.setEmail(email);
-        user.setUsername(oAuth2User.getAttribute("name"));
+        user.setUsername(oidcUser.getAttribute("name"));
+        user.setGoogleId(oidcUser.getAttribute("sub"));
+        user.setProfilePicture(oidcUser.getAttribute("picture"));
         user.setProvider(Provider.GOOGLE);
         user.setUpdatedAt(LocalDateTime.now());
 
@@ -55,6 +58,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         userRepository.saveAndFlush(user);
 
-        return oAuth2User;
+        return oidcUser;
     }
 }
