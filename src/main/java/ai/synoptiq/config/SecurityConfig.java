@@ -124,7 +124,9 @@ public class SecurityConfig {
 
                 "http://localhost:3000",
 
-                "https://synoptiq.vercel.app"
+                "https://synoptiq.vercel.app",
+
+                "https://synoptiq.abhiram.tech"
 
         ));
 
